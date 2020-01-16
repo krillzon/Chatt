@@ -11,17 +11,8 @@ except ImportError:
 
 #TODO
 # Kommentera koden
-# Kolla på grupper (?)
 #
 
-
-#def create_group_table():
-#    group_cursor.execute(f"CREATE TABLE IF NOT EXISTS groups(user TEXT, group TEXT)")
-#
-#def groups(name, group):
-#    group_cursor.execute(f"INSERT INTO Groups(user, group) VALUES (?, ?)",
-#                            (name, group))
-#    group_cursor.commit()
 
 def create_table(now):
     messages_cursor.execute(f"CREATE TABLE IF NOT EXISTS {now.strftime('%B_%d_%Y')}(date TEXT, user TEXT, message TEXT)")
@@ -48,18 +39,48 @@ def train_announcement():
             has_sent = False
 
 
+def get_groups1(client, day):
+    date = day.split()[1]
+    messages_cursor.execute(f"SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{date}'")
+    if messages_cursor.fetchone()[0] == 1:
+        messages_cursor.execute(f"SELECT * from {date} WHERE user LIKE '%1:%'")
+        for row in messages_cursor.fetchall():
+            try:
+                messages_cursor.execute(f"SELECT user from {date}")
+                client.send(bytes(f"{row[1]}", 'utf-8'))
+            except ConnectionResetError:
+                return
+    else:
+        client.send(bytes(f"{day.split()[1]} please insert: @geton [fullmonthname_date_fullyear]", 'utf-8'))
+
+
+def get_groups2(client, day):
+    date = day.split()[1]
+    messages_cursor.execute(f"SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{date}'")
+    if messages_cursor.fetchone()[0] == 1:
+        messages_cursor.execute(f"SELECT * from {date} WHERE user LIKE '%2:%'")
+        for row in messages_cursor.fetchall():
+            try:
+                messages_cursor.execute(f"SELECT user from {date}")
+                client.send(bytes(f"{row[1]}", 'utf-8'))
+            except ConnectionResetError:
+                return
+    else:
+        client.send(bytes(f"{day.split()[1]} please insert: @geton [fullmonthname_date_fullyear]", 'utf-8'))
+
+
 def get_messages(client, day):
     date = day.split()[1]
     messages_cursor.execute(f"SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{date}'")
     if messages_cursor.fetchone()[0] == 1:
-        messages_cursor.execute(f"SELECT * from {day.split()[1]}")
-        for row in messages_cursor.fetchall():
+        messages_cursor.execute(f"SELECT * from {date}")
+        for row in messages_cursor.fetchone():
             try:
                 client.send(bytes(f"{row[0]} {row[1]}{row[2]}", 'utf-8'))
             except ConnectionResetError:
                 return
     else:
-        client.send(bytes(f"{day.split()[1]} please insert: -d [fullmonthname_date_fullyear]", 'utf-8'))
+        client.send(bytes(f"{date} please insert: -d [fullmonthname_date_fullyear]", 'utf-8'))
 
 
 def accept_incoming_connections():
@@ -80,26 +101,20 @@ def accept_incoming_connections():
         Thread(target=handle_client, args=(client,)).start()
 
 
-#def ask_group(client, name):
-#
-#    if client.recv(BUFSIZE).decode("utf8") != "1":
-#        if client.recv(BUFSIZE).decode("utf8") != "2":
-#            client.send(bytes("Please enter a group between 1 or 2", 'utf8'))
-#            ask_group(client, name)
-#        else:
-#            #create_group_table()
-#            group = client.recv(BUFSIZE).decode("utf8")
-#            #group_cursor.execute(f"INSERT INTO Groups(name, group) VALUES (?, ?)", (name, group))
-#            #group_conn.commit()
-#            letter = 'Welcome to group %s.' % group
-#            client.send(bytes(letter, "utf8"))
-#    else:
-#        #create_group_table()
-#        group = client.recv(BUFSIZE).decode("utf8")
-#        #group_cursor.execute(f"INSERT INTO Groups(name, group) VALUES (?, ?)", (name, group))
-#        #group_conn.commit()
-#        letter = 'Welcome to group %s.' % group
-#        client.send(bytes(letter, "utf8"))
+def ask_group(client, name):
+
+    if client.recv(BUFSIZE).decode("utf8") != "1":
+        if client.recv(BUFSIZE).decode("utf8") != "2":
+            client.send(bytes("Please enter a group between 1 or 2", 'utf8'))
+            ask_group(client, name)
+        else:
+            group = client.recv(BUFSIZE).decode("utf8")
+            letter = 'Welcome to group %s.' % group
+            client.send(bytes(letter, "utf8"))
+    else:
+        group = client.recv(BUFSIZE).decode("utf8")
+        letter = 'Welcome to group %s.' % group
+        client.send(bytes(letter, "utf8"))
 
 
 def handle_client(client):  # Takes client socket as argument.
@@ -148,6 +163,26 @@ def handle_client(client):  # Takes client socket as argument.
                             client.send(bytes("SERVER: Please insert what date: strMONTH_intDAY_intYEAR", 'utf-8'))
                     else:
                         client.send(bytes("SERVER: Maybe you meant: -getdb ?", 'utf-8'))
+
+                if msg.decode('utf-8')[0] == '!':
+                    client.send(bytes("SERVER: Commands are [ @getgp1, @getgp2, -getdb, /o, getdadjoke ]", 'utf-8'))
+                elif msg.decode('utf-8')[0] == '@':
+                    if msg.decode('utf-8')[:7] == '@getgp1':
+                        groupie = msg.decode('utf-8')
+                        if len(groupie.split()) == 2:
+                            get_groups1(client, groupie)
+                        else:
+                            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
+
+                    elif msg.decode('utf-8')[:7] == '@getgp2':
+                        groupie = msg.decode('utf-8')
+                        if len(groupie.split()) == 2:
+                            get_groups2(client, groupie)
+                        else:
+                            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
+                    else:
+                        client.send(bytes("SERVER: Maybe you meant: @getgp1 or @getgp2?", 'utf-8'))
+
                 elif msg.decode('utf-8')[0] == '/':
                     if msg.decode('utf-8')[:2] == '/o':
                         online = 'Online Clients %s' % onlineClients
@@ -167,6 +202,7 @@ def handle_client(client):  # Takes client socket as argument.
                         sys.exit(0)
                     broadcast(bytes("%s has left the chat." % name, "utf8"))
                     break
+
 
 def broadcast(msg, prefix="Server: ", saved=True):
     """Broadcasts a message to all the clients."""
@@ -192,8 +228,7 @@ if __name__ == "__main__":
     #Create a database connection or create one
     messages_conn = sqlite3.connect('message_history.db', check_same_thread=False)
     messages_cursor = messages_conn.cursor()
-   #group_conn = sqlite3.connect('groups.db', check_same_thread=False)
-   #group_cursor = group_conn.cursor()
+
 
     ADDR = (HOST, PORT)
     SERVER = socket.socket(AF_INET, SOCK_STREAM)
@@ -210,9 +245,5 @@ if __name__ == "__main__":
 
     messages_cursor.close()
     messages_conn.close()
-
-    #group_cursor.close()
-    #group_conn.close()
-
 
     SERVER.close()
