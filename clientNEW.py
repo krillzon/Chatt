@@ -8,14 +8,13 @@ import requests, json
 from datetime import datetime
 
 firstclick = True
-HOST = "127.0.0.1"
-PORT = 33002
-
 
 #TODO
 # Remove being able to close chat on X
 # Can print all online Clients
 # Time
+
+
 def message_box(event):
     """function that gets called whenever someone clicks the entry fields for the first time"""
     global firstclick
@@ -35,21 +34,20 @@ def receive():
     """Handles receiving of messages."""
     while True:
         try:
-            #data = client_socket.recv(BUFSIZ).decode("utf8")
             data = client_socket.recv(BUFSIZ).decode("utf8")
-            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             if len(data) == 0:
                 pass
             else:
-                messageHistory.insert(END,'\n', now, data)
+                messageHistory.insert(END, data)
                 messageHistory.see("end")
         except OSError:  # Possibly client has left the chat.
             break
 
+
 def send(event=None):
     message = my_msg.get()
     part2 = ''
-    if my_msg.get() == "!dad":
+    if my_msg.get() == "getdadjoke":
        (message, part2) = get_dad_joke()
     my_msg.set('')  # Clears input field.
     try:
@@ -65,6 +63,7 @@ def send(event=None):
         client_socket.close()
         root.quit()
 
+
 def on_closing(event=None):
     """This function is to be called when the window is closed."""
     #client_socket.close()
@@ -72,6 +71,9 @@ def on_closing(event=None):
     my_msg.set("quitchat")
     send()
 
+
+HOST = "127.0.0.1"
+PORT = 33002
 
 root = Tk()
 root.title("Connected to " + HOST + ":" + str(PORT) )
