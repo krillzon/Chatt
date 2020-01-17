@@ -74,13 +74,13 @@ def get_messages(client, day):
     messages_cursor.execute(f"SELECT count(name) FROM sqlite_master WHERE type='table' AND name='{date}'")
     if messages_cursor.fetchone()[0] == 1:
         messages_cursor.execute(f"SELECT * from {date}")
-        for row in messages_cursor.fetchone():
+        for row in messages_cursor.fetchall():
             try:
                 client.send(bytes(f"{row[0]} {row[1]}{row[2]}", 'utf-8'))
             except ConnectionResetError:
                 return
     else:
-        client.send(bytes(f"{date} please insert: -d [fullmonthname_date_fullyear]", 'utf-8'))
+        client.send(bytes(f"{day.split()[1]} please insert: -getdb strMONTH_intDAY_intYEAR", 'utf-8'))
 
 
 def accept_incoming_connections():
@@ -164,24 +164,24 @@ def handle_client(client):  # Takes client socket as argument.
                     else:
                         client.send(bytes("SERVER: Maybe you meant: -getdb ?", 'utf-8'))
 
-                if msg.decode('utf-8')[0] == '!':
-                    client.send(bytes("SERVER: Commands are [ @getgp1, @getgp2, -getdb, /o, getdadjoke ]", 'utf-8'))
-                elif msg.decode('utf-8')[0] == '@':
-                    if msg.decode('utf-8')[:7] == '@getgp1':
-                        groupie = msg.decode('utf-8')
-                        if len(groupie.split()) == 2:
-                            get_groups1(client, groupie)
-                        else:
-                            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
-
-                    elif msg.decode('utf-8')[:7] == '@getgp2':
-                        groupie = msg.decode('utf-8')
-                        if len(groupie.split()) == 2:
-                            get_groups2(client, groupie)
-                        else:
-                            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
-                    else:
-                        client.send(bytes("SERVER: Maybe you meant: @getgp1 or @getgp2?", 'utf-8'))
+                #elif msg.decode('utf-8')[0] == '!':
+                #    client.send(bytes("SERVER: Commands are [ @getgp1, @getgp2, -getdb, /o, getdadjoke ]", 'utf-8'))
+                #elif msg.decode('utf-8')[0] == '@':
+                #    if msg.decode('utf-8')[:7] == '@getgp1':
+                #        groupie = msg.decode('utf-8')
+                #        if len(groupie.split()) == 2:
+                #            get_groups1(client, groupie)
+                #        else:
+                #            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
+#
+                #    elif msg.decode('utf-8')[:7] == '@getgp2':
+                #        groupie = msg.decode('utf-8')
+                #        if len(groupie.split()) == 2:
+                #            get_groups2(client, groupie)
+                #        else:
+                #            client.send(bytes("SERVER: Please insert date: strMONTH_intDAY_intYEAR", 'utf-8'))
+                #    else:
+                #        client.send(bytes("SERVER: Maybe you meant: @getgp1 or @getgp2?", 'utf-8'))
 
                 elif msg.decode('utf-8')[0] == '/':
                     if msg.decode('utf-8')[:2] == '/o':
