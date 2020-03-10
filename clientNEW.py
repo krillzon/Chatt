@@ -73,7 +73,7 @@ def on_closing(event=None):
 
 
 HOST = "127.0.0.1"
-PORT = 33002
+PORT = 1234
 
 root = Tk()
 root.title("Connected to " + HOST + ":" + str(PORT) )
